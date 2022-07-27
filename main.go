@@ -256,6 +256,13 @@ func logTxnMessage(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "A log message was recorded")
 }
 
+// CLMTestFunc has a definition now
+func CLMTestFunc(app *newrelic.Application) {
+	txn := app.StartTransaction("clm test")
+	time.Sleep(time.Second * 1)
+	txn.End()
+}
+
 func main() {
 	app, err := newrelic.NewApplication(
 		newrelic.ConfigAppName("Example Codestream Go App"),
@@ -263,11 +270,20 @@ func main() {
 		newrelic.ConfigDebugLogger(os.Stdout),
 		newrelic.ConfigAppLogForwardingEnabled(true),
 		newrelic.ConfigCodeLevelMetricsEnabled(true),
-		newrelic.ConfigCodeLevelMetricsPathPrefix("go-agent/v3"),
+		newrelic.ConfigCodeLevelMetricsPathPrefix("/Users/emiliogarcia/Dev/codestream-test"),
 	)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	if err := app.WaitForConnection(5 * time.Second); nil != err {
+		fmt.Println(err)
+	}
+
+	for i := 300; i > 0; i-- {
+		CLMTestFunc(app)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/", index))
